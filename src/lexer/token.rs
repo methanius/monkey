@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub struct Token<'a> {
-    token_type: TokenType,
-    literal: &'a str,
+    pub token_type: TokenType,
+    pub literal: &'a str,
 }
 
 #[allow(unused)]
@@ -26,35 +26,35 @@ pub enum TokenType {
 impl<'a> Token<'a> {
     pub fn from_string(string: &str) -> Self {
         match string {
-            _ if string.starts_with("=") => Token {
+            _ if string.starts_with('=') => Token {
                 token_type: TokenType::ASSIGN,
                 literal: "=",
             },
-            _ if string.starts_with("+") => Token {
+            _ if string.starts_with('+') => Token {
                 token_type: TokenType::PLUS,
                 literal: "+",
             },
-            _ if string.starts_with(",") => Token {
+            _ if string.starts_with(',') => Token {
                 token_type: TokenType::COMMA,
                 literal: ",",
             },
-            _ if string.starts_with(";") => Token {
+            _ if string.starts_with(';') => Token {
                 token_type: TokenType::SEMICOLON,
                 literal: ";",
             },
-            _ if string.starts_with("(") => Token {
+            _ if string.starts_with('(') => Token {
                 token_type: TokenType::LPAREN,
                 literal: "(",
             },
-            _ if string.starts_with(")") => Token {
+            _ if string.starts_with(')') => Token {
                 token_type: TokenType::RPAREN,
                 literal: ")",
             },
-            _ if string.starts_with("{") => Token {
+            _ if string.starts_with('{') => Token {
                 token_type: TokenType::LBRACE,
                 literal: "{",
             },
-            _ if string.starts_with("}") => Token {
+            _ if string.starts_with('}') => Token {
                 token_type: TokenType::RBRACE,
                 literal: "}",
             },
