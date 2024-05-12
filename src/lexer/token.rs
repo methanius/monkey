@@ -19,6 +19,12 @@ pub enum Token<'lexing> {
     Rparen,
     Lbrace,
     Rbrace,
+
     Function,
     Let,
+    True,
+    False,
+    If,
+    Else,
+    Return,
 }

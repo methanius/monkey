@@ -69,7 +69,15 @@ impl<'lexing> Lexer<'lexing> {
     }
 }
 
-const KEYWORD_TOKENS: [(&str, Token); 2] = [("fn", Token::Function), ("let", Token::Let)];
+const KEYWORD_TOKENS: [(&str, Token); 7] = [
+    ("fn", Token::Function),
+    ("let", Token::Let),
+    ("true", Token::True),
+    ("false", Token::False),
+    ("if", Token::If),
+    ("else", Token::Else),
+    ("return", Token::Return),
+];
 
 fn is_whitespace(c: &char) -> bool {
     *c == ' ' || *c == '\t' || *c == '\n' || *c == '\r'
@@ -127,13 +135,12 @@ mod tests {
     };
     let result = add(five, ten);
     !-/*5;
-    5 < 10 > 5;";
-        //
-        // if (5 < 10) {
-        //     return true;
-        // } else {
-        //     return false;
-        // }
+    5 < 10 > 5;
+    if (5 < 10) {
+        return true;
+    } else {
+        return false;
+    }";
         //
         // 10 == 10;
         // 10 != 9;";
@@ -189,8 +196,28 @@ mod tests {
                 Token::Gt,
                 Token::Int("5"),
                 Token::Semicolon,
-                // !-/*5;
-                //5 < 10 > 5;"; */
+                Token::If,
+                Token::Lparen,
+                Token::Int("5"),
+                Token::Lt,
+                Token::Int("10"),
+                Token::Rparen,
+                Token::Lbrace,
+                Token::Return,
+                Token::True,
+                Token::Semicolon,
+                Token::Rbrace,
+                Token::Else,
+                Token::Lbrace,
+                Token::Return,
+                Token::False,
+                Token::Semicolon,
+                Token::Rbrace,
+                // if (5 < 10) {
+                //     return true;
+                // } else {
+                //     return false;
+                // }";
                 Token::Eof,
             ]
         )
