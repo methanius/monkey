@@ -19,6 +19,12 @@ impl<'lexing> Lexer<'lexing> {
             let (token, lexer) = match c {
                 '=' => (Token::Assign, advanced_lexer),
                 '+' => (Token::Plus, advanced_lexer),
+                '-' => (Token::Minus, advanced_lexer),
+                '!' => (Token::Bang, advanced_lexer),
+                '*' => (Token::Asterisk, advanced_lexer),
+                '/' => (Token::Slash, advanced_lexer),
+                '<' => (Token::Lt, advanced_lexer),
+                '>' => (Token::Gt, advanced_lexer),
                 ',' => (Token::Comma, advanced_lexer),
                 ';' => (Token::Semicolon, advanced_lexer),
                 '(' => (Token::Lparen, advanced_lexer),
@@ -119,7 +125,18 @@ mod tests {
     let add = fn(x, y) {
     x + y;
     };
-    let result = add(five, ten);";
+    let result = add(five, ten);
+    !-/*5;
+    5 < 10 > 5;";
+        //
+        // if (5 < 10) {
+        //     return true;
+        // } else {
+        //     return false;
+        // }
+        //
+        // 10 == 10;
+        // 10 != 9;";
         let token_vec = lex(INPUT);
         assert_eq!(
             token_vec,
@@ -160,6 +177,20 @@ mod tests {
                 Token::Ident("ten"),
                 Token::Rparen,
                 Token::Semicolon,
+                Token::Bang,
+                Token::Minus,
+                Token::Slash,
+                Token::Asterisk,
+                Token::Int("5"),
+                Token::Semicolon,
+                Token::Int("5"),
+                Token::Lt,
+                Token::Int("10"),
+                Token::Gt,
+                Token::Int("5"),
+                Token::Semicolon,
+                // !-/*5;
+                //5 < 10 > 5;"; */
                 Token::Eof,
             ]
         )
