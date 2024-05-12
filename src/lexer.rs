@@ -1,6 +1,8 @@
 mod token;
 
-use token::{Token, TokenType};
+use core::panic;
+
+use token::Token;
 pub struct Lexer<'lexing> {
     input: &'lexing str,
 }
@@ -11,50 +13,64 @@ impl<'lexing> Lexer<'lexing> {
     }
 
     pub fn next_token(self) -> (Token<'lexing>, Lexer<'lexing>) {
-        let token = match self.input.chars().next().unwrap() {
-            '=' => Token {
-                token_type: TokenType::ASSIGN,
-                literal: "=",
-            },
-            '+' => Token {
-                token_type: TokenType::PLUS,
-                literal: "+",
-            },
-            ',' => Token {
-                token_type: TokenType::COMMA,
-                literal: ",",
-            },
-            ';' => Token {
-                token_type: TokenType::SEMICOLON,
-                literal: ";",
-            },
-            '(' => Token {
-                token_type: TokenType::LPAREN,
-                literal: "(",
-            },
-            ')' => Token {
-                token_type: TokenType::RPAREN,
-                literal: ")",
-            },
-            '{' => Token {
-                token_type: TokenType::LBRACE,
-                literal: "{",
-            },
-            '}' => Token {
-                token_type: TokenType::RBRACE,
-                literal: "}",
-            },
-            '0' => Token {
-                token_type: TokenType::EOF,
-                literal: "",
-            },
-            _ => Token {
-                token_type: TokenType::ILLEGAL,
-                literal: "",
-            },
-        };
-        (token, Lexer::new(&self.input[1..]))
+        let lexer = self.skip_whitespace();
+        if let Some(c) = lexer.input.chars().next() {
+            let advanced_lexer = Lexer::new(&lexer.input[1..]);
+            let (token, lexer) = match c {
+                '=' => (Token::ASSIGN, advanced_lexer),
+                '+' => (Token::PLUS, advanced_lexer),
+                ',' => (Token::COMMA, advanced_lexer),
+                ';' => (Token::SEMICOLON, advanced_lexer),
+                '(' => (Token::LPAREN, advanced_lexer),
+                ')' => (Token::RPAREN, advanced_lexer),
+                '{' => (Token::LBRACE, advanced_lexer),
+                '}' => (Token::RBRACE, advanced_lexer),
+                '0' => (Token::EOF, advanced_lexer),
+                x if x.is_ascii_alphabetic() => {
+                    let ident_name_len: usize =
+                        lexer.input.chars().take_while(is_valid_ident_char).count();
+                    let ident_name = &lexer.input[..ident_name_len];
+                    let advanced_lexer = Lexer::new(&lexer.input[ident_name_len..]);
+                    let token_match: Token = KEYWORD_TOKENS
+                        .iter()
+                        .filter(|(word, _)| *word == ident_name)
+                        .map(|t| t.1.clone())
+                        .next()
+                        .unwrap_or(Token::IDENT(ident_name));
+                    (token_match, advanced_lexer)
+                }
+                '0'..='9' => {
+                    let integer_len = lexer
+                        .input
+                        .chars()
+                        .take_while(|c| c.is_ascii_digit())
+                        .count();
+                    (
+                        Token::INT(&lexer.input[..integer_len]),
+                        Lexer::new(&lexer.input[integer_len..]),
+                    )
+                }
+                _ => (Token::ILLEGAL(&lexer.input[..1]), advanced_lexer),
+            };
+            (token, lexer)
+        } else {
+            (Token::EOF, Lexer::new(""))
+        }
     }
+
+    fn skip_whitespace(self) -> Self {
+        Lexer::new(&self.input[self.input.chars().take_while(is_whitespace).count()..])
+    }
+}
+
+const KEYWORD_TOKENS: [(&str, Token); 2] = [("fn", Token::FUNCTION), ("let", Token::LET)];
+
+fn is_whitespace(c: &char) -> bool {
+    *c == ' ' || *c == '\t' || *c == '\n' || *c == '\r'
+}
+
+fn is_valid_ident_char(c: &char) -> bool {
+    c.is_ascii_alphabetic() || *c == '_'
 }
 
 pub fn lex(code: &str) -> Vec<Token> {
@@ -64,10 +80,10 @@ pub fn lex(code: &str) -> Vec<Token> {
     loop {
         (token, lexer) = lexer.next_token();
         token_vec.push(token);
-        if token_vec.last().unwrap().token_type == TokenType::EOF
-            || token_vec.last().unwrap().token_type == TokenType::ILLEGAL
-        {
-            return token_vec;
+        match token_vec.last().unwrap() {
+            Token::EOF => return token_vec,
+            Token::ILLEGAL(c) => panic!("Illegal token encountered, char {c:?}"),
+            _ => (),
         }
     }
 }
@@ -75,7 +91,7 @@ pub fn lex(code: &str) -> Vec<Token> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use token::{Token, TokenType};
+    use token::Token;
     #[test]
     fn test_next_single_literal_token() {
         const INPUT: &str = "=+(){},;";
@@ -83,42 +99,15 @@ mod tests {
         assert_eq!(
             token_vec,
             vec![
-                Token {
-                    token_type: TokenType::ASSIGN,
-                    literal: "="
-                },
-                Token {
-                    token_type: TokenType::PLUS,
-                    literal: "+"
-                },
-                Token {
-                    token_type: TokenType::LPAREN,
-                    literal: "("
-                },
-                Token {
-                    token_type: TokenType::RPAREN,
-                    literal: ")"
-                },
-                Token {
-                    token_type: TokenType::LBRACE,
-                    literal: "{"
-                },
-                Token {
-                    token_type: TokenType::RBRACE,
-                    literal: "}"
-                },
-                Token {
-                    token_type: TokenType::COMMA,
-                    literal: ","
-                },
-                Token {
-                    token_type: TokenType::SEMICOLON,
-                    literal: ";"
-                },
-                Token {
-                    token_type: TokenType::EOF,
-                    literal: ""
-                },
+                Token::ASSIGN,
+                Token::PLUS,
+                Token::LPAREN,
+                Token::RPAREN,
+                Token::LBRACE,
+                Token::RBRACE,
+                Token::COMMA,
+                Token::SEMICOLON,
+                Token::EOF,
             ]
         );
     }
@@ -126,163 +115,52 @@ mod tests {
     #[test]
     fn test_next_multi_literal_token() {
         const INPUT: &str = "let five = 5;
-let ten = 10;
-let add = fn(x, y) {
-x + y;
-};
-let result = add(five, ten);";
+    let ten = 10;
+    let add = fn(x, y) {
+    x + y;
+    };
+    let result = add(five, ten);";
         let token_vec = lex(INPUT);
         assert_eq!(
             token_vec,
             vec![
-                Token {
-                    token_type: TokenType::LET,
-                    literal: "let"
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "five"
-                },
-                Token {
-                    token_type: TokenType::ASSIGN,
-                    literal: "="
-                },
-                Token {
-                    token_type: TokenType::INT,
-                    literal: "5"
-                },
-                Token {
-                    token_type: TokenType::SEMICOLON,
-                    literal: ";"
-                },
-                Token {
-                    token_type: TokenType::LET,
-                    literal: "let"
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "ten"
-                },
-                Token {
-                    token_type: TokenType::ASSIGN,
-                    literal: "="
-                },
-                Token {
-                    token_type: TokenType::INT,
-                    literal: "10"
-                },
-                Token {
-                    token_type: TokenType::SEMICOLON,
-                    literal: ";"
-                },
-                Token {
-                    token_type: TokenType::LET,
-                    literal: "let"
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "add"
-                },
-                Token {
-                    token_type: TokenType::ASSIGN,
-                    literal: "="
-                },
-                Token {
-                    token_type: TokenType::FUNCTION,
-                    literal: "fn"
-                },
-                Token {
-                    token_type: TokenType::LPAREN,
-                    literal: "("
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "x"
-                },
-                Token {
-                    token_type: TokenType::COMMA,
-                    literal: ","
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "y"
-                },
-                Token {
-                    token_type: TokenType::RPAREN,
-                    literal: ")"
-                },
-                Token {
-                    token_type: TokenType::LBRACE,
-                    literal: "{"
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "x"
-                },
-                Token {
-                    token_type: TokenType::PLUS,
-                    literal: "+"
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "y"
-                },
-                Token {
-                    token_type: TokenType::SEMICOLON,
-                    literal: ";"
-                },
-                Token {
-                    token_type: TokenType::RBRACE,
-                    literal: "}"
-                },
-                Token {
-                    token_type: TokenType::SEMICOLON,
-                    literal: ";"
-                },
-                Token {
-                    token_type: TokenType::LET,
-                    literal: "let"
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "result"
-                },
-                Token {
-                    token_type: TokenType::ASSIGN,
-                    literal: "="
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "add"
-                },
-                Token {
-                    token_type: TokenType::LPAREN,
-                    literal: "("
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "five"
-                },
-                Token {
-                    token_type: TokenType::COMMA,
-                    literal: ","
-                },
-                Token {
-                    token_type: TokenType::IDENT,
-                    literal: "ten"
-                },
-                Token {
-                    token_type: TokenType::RPAREN,
-                    literal: ")"
-                },
-                Token {
-                    token_type: TokenType::SEMICOLON,
-                    literal: ";"
-                },
-                Token {
-                    token_type: TokenType::EOF,
-                    literal: ""
-                },
+                Token::LET,
+                Token::IDENT("five"),
+                Token::ASSIGN,
+                Token::INT("5"),
+                Token::SEMICOLON,
+                Token::LET,
+                Token::IDENT("ten"),
+                Token::ASSIGN,
+                Token::INT("10"),
+                Token::SEMICOLON,
+                Token::LET,
+                Token::IDENT("add"),
+                Token::ASSIGN,
+                Token::FUNCTION,
+                Token::LPAREN,
+                Token::IDENT("x"),
+                Token::COMMA,
+                Token::IDENT("y"),
+                Token::RPAREN,
+                Token::LBRACE,
+                Token::IDENT("x"),
+                Token::PLUS,
+                Token::IDENT("y"),
+                Token::SEMICOLON,
+                Token::RBRACE,
+                Token::SEMICOLON,
+                Token::LET,
+                Token::IDENT("result"),
+                Token::ASSIGN,
+                Token::IDENT("add"),
+                Token::LPAREN,
+                Token::IDENT("five"),
+                Token::COMMA,
+                Token::IDENT("ten"),
+                Token::RPAREN,
+                Token::SEMICOLON,
+                Token::EOF,
             ]
         )
     }

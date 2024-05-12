@@ -1,16 +1,10 @@
-#[derive(Debug, PartialEq, Clone)]
-pub struct Token<'a> {
-    pub token_type: TokenType,
-    pub literal: &'a str,
-}
-
 #[allow(unused)]
 #[derive(Debug, PartialEq, Clone)]
-pub enum TokenType {
-    ILLEGAL,
+pub enum Token<'lexing> {
+    ILLEGAL(&'lexing str),
     EOF,
-    IDENT,
-    INT,
+    IDENT(&'lexing str),
+    INT(&'lexing str),
     ASSIGN,
     PLUS,
     COMMA,
