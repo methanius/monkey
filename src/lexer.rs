@@ -17,10 +17,22 @@ impl<'lexing> Lexer<'lexing> {
         if let Some(c) = lexer.input.chars().next() {
             let advanced_lexer = Lexer::new(&lexer.input[1..]);
             let (token, lexer) = match c {
-                '=' => (Token::Assign, advanced_lexer),
+                '=' => {
+                    if lexer.input.chars().nth(1).unwrap_or(' ') == '=' {
+                        (Token::Eq, Lexer::new(&lexer.input[2..]))
+                    } else {
+                        (Token::Assign, advanced_lexer)
+                    }
+                }
                 '+' => (Token::Plus, advanced_lexer),
                 '-' => (Token::Minus, advanced_lexer),
-                '!' => (Token::Bang, advanced_lexer),
+                '!' => {
+                    if lexer.input.chars().nth(1).unwrap_or(' ') == '=' {
+                        (Token::NotEq, Lexer::new(&lexer.input[2..]))
+                    } else {
+                        (Token::Bang, advanced_lexer)
+                    }
+                }
                 '*' => (Token::Asterisk, advanced_lexer),
                 '/' => (Token::Slash, advanced_lexer),
                 '<' => (Token::Lt, advanced_lexer),
@@ -140,10 +152,9 @@ mod tests {
         return true;
     } else {
         return false;
-    }";
-        //
-        // 10 == 10;
-        // 10 != 9;";
+    }
+    10 == 10;
+    10 != 9;";
         let token_vec = lex(INPUT);
         assert_eq!(
             token_vec,
@@ -213,11 +224,14 @@ mod tests {
                 Token::False,
                 Token::Semicolon,
                 Token::Rbrace,
-                // if (5 < 10) {
-                //     return true;
-                // } else {
-                //     return false;
-                // }";
+                Token::Int("10"),
+                Token::Eq,
+                Token::Int("10"),
+                Token::Semicolon,
+                Token::Int("10"),
+                Token::NotEq,
+                Token::Int("9"),
+                Token::Semicolon,
                 Token::Eof,
             ]
         )

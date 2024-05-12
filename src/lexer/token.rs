@@ -3,8 +3,11 @@
 pub enum Token<'lexing> {
     Illegal(&'lexing str),
     Eof,
+
     Ident(&'lexing str),
+
     Int(&'lexing str),
+
     Assign,
     Plus,
     Minus,
@@ -19,6 +22,8 @@ pub enum Token<'lexing> {
     Rparen,
     Lbrace,
     Rbrace,
+    Eq,
+    NotEq,
 
     Function,
     Let,
