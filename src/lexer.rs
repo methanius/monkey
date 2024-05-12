@@ -17,15 +17,15 @@ impl<'lexing> Lexer<'lexing> {
         if let Some(c) = lexer.input.chars().next() {
             let advanced_lexer = Lexer::new(&lexer.input[1..]);
             let (token, lexer) = match c {
-                '=' => (Token::ASSIGN, advanced_lexer),
-                '+' => (Token::PLUS, advanced_lexer),
-                ',' => (Token::COMMA, advanced_lexer),
-                ';' => (Token::SEMICOLON, advanced_lexer),
-                '(' => (Token::LPAREN, advanced_lexer),
-                ')' => (Token::RPAREN, advanced_lexer),
-                '{' => (Token::LBRACE, advanced_lexer),
-                '}' => (Token::RBRACE, advanced_lexer),
-                '0' => (Token::EOF, advanced_lexer),
+                '=' => (Token::Assign, advanced_lexer),
+                '+' => (Token::Plus, advanced_lexer),
+                ',' => (Token::Comma, advanced_lexer),
+                ';' => (Token::Semicolon, advanced_lexer),
+                '(' => (Token::Lparen, advanced_lexer),
+                ')' => (Token::Rparen, advanced_lexer),
+                '{' => (Token::Lbrace, advanced_lexer),
+                '}' => (Token::Rbrace, advanced_lexer),
+                '0' => (Token::Eof, advanced_lexer),
                 x if x.is_ascii_alphabetic() => {
                     let ident_name_len: usize =
                         lexer.input.chars().take_while(is_valid_ident_char).count();
@@ -36,7 +36,7 @@ impl<'lexing> Lexer<'lexing> {
                         .filter(|(word, _)| *word == ident_name)
                         .map(|t| t.1.clone())
                         .next()
-                        .unwrap_or(Token::IDENT(ident_name));
+                        .unwrap_or(Token::Ident(ident_name));
                     (token_match, advanced_lexer)
                 }
                 '0'..='9' => {
@@ -46,15 +46,15 @@ impl<'lexing> Lexer<'lexing> {
                         .take_while(|c| c.is_ascii_digit())
                         .count();
                     (
-                        Token::INT(&lexer.input[..integer_len]),
+                        Token::Int(&lexer.input[..integer_len]),
                         Lexer::new(&lexer.input[integer_len..]),
                     )
                 }
-                _ => (Token::ILLEGAL(&lexer.input[..1]), advanced_lexer),
+                _ => (Token::Illegal(&lexer.input[..1]), advanced_lexer),
             };
             (token, lexer)
         } else {
-            (Token::EOF, Lexer::new(""))
+            (Token::Eof, Lexer::new(""))
         }
     }
 
@@ -63,7 +63,7 @@ impl<'lexing> Lexer<'lexing> {
     }
 }
 
-const KEYWORD_TOKENS: [(&str, Token); 2] = [("fn", Token::FUNCTION), ("let", Token::LET)];
+const KEYWORD_TOKENS: [(&str, Token); 2] = [("fn", Token::Function), ("let", Token::Let)];
 
 fn is_whitespace(c: &char) -> bool {
     *c == ' ' || *c == '\t' || *c == '\n' || *c == '\r'
@@ -81,8 +81,8 @@ pub fn lex(code: &str) -> Vec<Token> {
         (token, lexer) = lexer.next_token();
         token_vec.push(token);
         match token_vec.last().unwrap() {
-            Token::EOF => return token_vec,
-            Token::ILLEGAL(c) => panic!("Illegal token encountered, char {c:?}"),
+            Token::Eof => return token_vec,
+            Token::Illegal(c) => panic!("Illegal token encountered, char {c:?}"),
             _ => (),
         }
     }
@@ -99,15 +99,15 @@ mod tests {
         assert_eq!(
             token_vec,
             vec![
-                Token::ASSIGN,
-                Token::PLUS,
-                Token::LPAREN,
-                Token::RPAREN,
-                Token::LBRACE,
-                Token::RBRACE,
-                Token::COMMA,
-                Token::SEMICOLON,
-                Token::EOF,
+                Token::Assign,
+                Token::Plus,
+                Token::Lparen,
+                Token::Rparen,
+                Token::Lbrace,
+                Token::Rbrace,
+                Token::Comma,
+                Token::Semicolon,
+                Token::Eof,
             ]
         );
     }
@@ -124,43 +124,43 @@ mod tests {
         assert_eq!(
             token_vec,
             vec![
-                Token::LET,
-                Token::IDENT("five"),
-                Token::ASSIGN,
-                Token::INT("5"),
-                Token::SEMICOLON,
-                Token::LET,
-                Token::IDENT("ten"),
-                Token::ASSIGN,
-                Token::INT("10"),
-                Token::SEMICOLON,
-                Token::LET,
-                Token::IDENT("add"),
-                Token::ASSIGN,
-                Token::FUNCTION,
-                Token::LPAREN,
-                Token::IDENT("x"),
-                Token::COMMA,
-                Token::IDENT("y"),
-                Token::RPAREN,
-                Token::LBRACE,
-                Token::IDENT("x"),
-                Token::PLUS,
-                Token::IDENT("y"),
-                Token::SEMICOLON,
-                Token::RBRACE,
-                Token::SEMICOLON,
-                Token::LET,
-                Token::IDENT("result"),
-                Token::ASSIGN,
-                Token::IDENT("add"),
-                Token::LPAREN,
-                Token::IDENT("five"),
-                Token::COMMA,
-                Token::IDENT("ten"),
-                Token::RPAREN,
-                Token::SEMICOLON,
-                Token::EOF,
+                Token::Let,
+                Token::Ident("five"),
+                Token::Assign,
+                Token::Int("5"),
+                Token::Semicolon,
+                Token::Let,
+                Token::Ident("ten"),
+                Token::Assign,
+                Token::Int("10"),
+                Token::Semicolon,
+                Token::Let,
+                Token::Ident("add"),
+                Token::Assign,
+                Token::Function,
+                Token::Lparen,
+                Token::Ident("x"),
+                Token::Comma,
+                Token::Ident("y"),
+                Token::Rparen,
+                Token::Lbrace,
+                Token::Ident("x"),
+                Token::Plus,
+                Token::Ident("y"),
+                Token::Semicolon,
+                Token::Rbrace,
+                Token::Semicolon,
+                Token::Let,
+                Token::Ident("result"),
+                Token::Assign,
+                Token::Ident("add"),
+                Token::Lparen,
+                Token::Ident("five"),
+                Token::Comma,
+                Token::Ident("ten"),
+                Token::Rparen,
+                Token::Semicolon,
+                Token::Eof,
             ]
         )
     }
