@@ -1,3 +1,5 @@
+use core::fmt;
+
 #[allow(unused)]
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token<'lexing> {
@@ -32,4 +34,10 @@ pub enum Token<'lexing> {
     If,
     Else,
     Return,
+}
+
+impl fmt::Display for Token<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
